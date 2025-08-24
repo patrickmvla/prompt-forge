@@ -1,0 +1,12 @@
+{
+  "name": "promptforge",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "api": "bun --cwd packages/api dev",
+    "ui": "bun --cwd packages/ui dev",
+    "dev": "bun run --parallel \"/api/\" \"/ui/\""
+  }
+}
