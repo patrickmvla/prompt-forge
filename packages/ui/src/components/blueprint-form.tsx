@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -74,6 +74,152 @@ const emptyDefaultValues: BlueprintFormValues = {
   outputSchema: JSON.stringify({}, null, 2),
 };
 
+// --- Sub-components for Field Arrays to resolve rendering bug ---
+
+const InputSlotFields = ({
+  control,
+}: {
+  control: Control<BlueprintFormValues>;
+}) => {
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "inputSlots",
+  });
+
+  return (
+    <div className="space-y-4">
+      <FormLabel>Input Slots</FormLabel>
+      <FormDescription>
+        Define dynamic variables for your task template.
+      </FormDescription>
+      {fields.map((field, index) => (
+        <div key={field.id} className="flex items-start space-x-2">
+          <FormField
+            control={control}
+            name={`inputSlots.${index}.name`}
+            render={({ field }) => (
+              <FormItem className="flex-grow">
+                <FormControl>
+                  <Input placeholder="Variable Name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={control}
+            name={`inputSlots.${index}.type`}
+            render={({ field }) => (
+              <FormItem>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="string">String</SelectItem>
+                    <SelectItem value="number">Number</SelectItem>
+                    <SelectItem value="date">Date</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button
+            type="button"
+            variant="destructive"
+            size="icon"
+            onClick={() => remove(index)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      ))}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => append({ name: "", type: "string" })}
+      >
+        Add Input Slot
+      </Button>
+    </div>
+  );
+};
+
+const RuleFields = ({ control }: { control: Control<BlueprintFormValues> }) => {
+  const { fields, append, remove } = useFieldArray({ control, name: "rules" });
+
+  return (
+    <div className="space-y-4">
+      <FormLabel>Rules</FormLabel>
+      <FormDescription>Define strict rules the AI must follow.</FormDescription>
+      {fields.map((field, index) => (
+        <div key={field.id} className="flex items-start space-x-2">
+          <FormField
+            control={control}
+            name={`rules.${index}.type`}
+            render={({ field }) => (
+              <FormItem>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue placeholder="Rule Type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="HARD">HARD</SelectItem>
+                    <SelectItem value="SOFT">SOFT</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={control}
+            name={`rules.${index}.value`}
+            render={({ field }) => (
+              <FormItem className="flex-grow">
+                <FormControl>
+                  <Input placeholder="e.g., NEVER mention GDPR" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button
+            type="button"
+            variant="destructive"
+            size="icon"
+            onClick={() => remove(index)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      ))}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => append({ id: uuidv4(), type: "HARD", value: "" })}
+      >
+        Add Rule
+      </Button>
+    </div>
+  );
+};
+
+// --- Main Form Component ---
+
 export const BlueprintForm = () => {
   const execute = useExecutionStore((state) => state.execute);
   const { activeBlueprint, setActiveBlueprint } = useBlueprintStore();
@@ -128,24 +274,6 @@ export const BlueprintForm = () => {
     },
   });
 
-  const {
-    fields: ruleFields,
-    append: appendRule,
-    remove: removeRule,
-  } = useFieldArray({
-    control: form.control,
-    name: "rules",
-  });
-
-  const {
-    fields: slotFields,
-    append: appendSlot,
-    remove: removeSlot,
-  } = useFieldArray({
-    control: form.control,
-    name: "inputSlots",
-  });
-
   const onPrepareExecution = (data: BlueprintFormValues) => {
     const parsedOutputSchema = JSON.parse(data.outputSchema);
     const inputSlotsRecord = data.inputSlots.reduce((acc, slot) => {
@@ -181,7 +309,6 @@ export const BlueprintForm = () => {
     }, {} as Record<string, { name: string; type: "string" | "number" | "date" }>);
 
     if (activeBlueprint) {
-      // Update existing blueprint
       const updatedBlueprint: PromptBlueprint = {
         id: activeBlueprint.id,
         name: data.name,
@@ -193,7 +320,6 @@ export const BlueprintForm = () => {
       };
       updateBlueprintMutation.mutate(updatedBlueprint);
     } else {
-      // Create new blueprint
       const newBlueprint = {
         name: data.name,
         role: data.role,
@@ -215,16 +341,14 @@ export const BlueprintForm = () => {
             name="name"
             render={({ field }) => (
               <FormItem>
-                {" "}
-                <FormLabel>Blueprint Name</FormLabel>{" "}
+                <FormLabel>Blueprint Name</FormLabel>
                 <FormControl>
-                  {" "}
                   <Input
                     placeholder="e.g., FDA Compliance Checker"
                     {...field}
-                  />{" "}
-                </FormControl>{" "}
-                <FormMessage />{" "}
+                  />
+                </FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -233,16 +357,11 @@ export const BlueprintForm = () => {
             name="role"
             render={({ field }) => (
               <FormItem>
-                {" "}
-                <FormLabel>AI Role</FormLabel>{" "}
+                <FormLabel>AI Role</FormLabel>
                 <FormControl>
-                  {" "}
-                  <Input
-                    placeholder="e.g., Senior FDA Auditor"
-                    {...field}
-                  />{" "}
-                </FormControl>{" "}
-                <FormMessage />{" "}
+                  <Input placeholder="e.g., Senior FDA Auditor" {...field} />
+                </FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -251,146 +370,39 @@ export const BlueprintForm = () => {
             name="taskTemplate"
             render={({ field }) => (
               <FormItem>
-                {" "}
-                <FormLabel>Task Template</FormLabel>{" "}
+                <FormLabel>Task Template</FormLabel>
                 <FormControl>
-                  {" "}
                   <Textarea
                     placeholder="Describe the task. Use {curly_braces} for dynamic inputs."
                     className="resize-none"
                     {...field}
-                  />{" "}
-                </FormControl>{" "}
-                <FormMessage />{" "}
+                  />
+                </FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />
 
-          <div className="space-y-4">
-            <FormLabel>Input Slots</FormLabel>
-            <FormDescription>
-              Define dynamic variables for your task template.
-            </FormDescription>
-            {slotFields.map((field, index) => (
-              <div key={field.id} className="flex items-start space-x-2">
-                <Input
-                  placeholder="Variable Name"
-                  {...form.register(`inputSlots.${index}.name`)}
-                />
-                <Select
-                  defaultValue={field.type}
-                  onValueChange={(value) =>
-                    form.setValue(
-                      `inputSlots.${index}.type`,
-                      value as "string" | "number" | "date"
-                    )
-                  }
-                >
-                  <SelectTrigger className="w-[120px]">
-                    {" "}
-                    <SelectValue placeholder="Type" />{" "}
-                  </SelectTrigger>
-                  <SelectContent>
-                    {" "}
-                    <SelectItem value="string">String</SelectItem>{" "}
-                    <SelectItem value="number">Number</SelectItem>{" "}
-                    <SelectItem value="date">Date</SelectItem>{" "}
-                  </SelectContent>
-                </Select>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="icon"
-                  onClick={() => removeSlot(index)}
-                >
-                  {" "}
-                  <Trash2 className="h-4 w-4" />{" "}
-                </Button>
-              </div>
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => appendSlot({ name: "", type: "string" })}
-            >
-              Add Input Slot
-            </Button>
-          </div>
-
-          <div className="space-y-4">
-            <FormLabel>Rules</FormLabel>
-            <FormDescription>
-              Define strict rules the AI must follow.
-            </FormDescription>
-            {ruleFields.map((field, index) => (
-              <div key={field.id} className="flex items-start space-x-2">
-                <Select
-                  defaultValue={field.type}
-                  onValueChange={(value) =>
-                    form.setValue(
-                      `rules.${index}.type`,
-                      value as "HARD" | "SOFT"
-                    )
-                  }
-                >
-                  <SelectTrigger className="w-[120px]">
-                    {" "}
-                    <SelectValue placeholder="Rule Type" />{" "}
-                  </SelectTrigger>
-                  <SelectContent>
-                    {" "}
-                    <SelectItem value="HARD">HARD</SelectItem>{" "}
-                    <SelectItem value="SOFT">SOFT</SelectItem>{" "}
-                  </SelectContent>
-                </Select>
-                <Input
-                  placeholder="e.g., NEVER mention GDPR"
-                  {...form.register(`rules.${index}.value`)}
-                  className="flex-grow"
-                />
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="icon"
-                  onClick={() => removeRule(index)}
-                >
-                  {" "}
-                  <Trash2 className="h-4 w-4" />{" "}
-                </Button>
-              </div>
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                appendRule({ id: uuidv4(), type: "HARD", value: "" })
-              }
-            >
-              Add Rule
-            </Button>
-          </div>
+          <InputSlotFields control={form.control} />
+          <RuleFields control={form.control} />
 
           <FormField
             control={form.control}
             name="outputSchema"
             render={({ field }) => (
               <FormItem>
-                {" "}
-                <FormLabel>Output Schema</FormLabel>{" "}
+                <FormLabel>Output Schema</FormLabel>
                 <FormControl>
-                  {" "}
                   <Textarea
                     placeholder='{ "result": "string", "confidence_score": "number" }'
                     className="min-h-[150px] font-mono resize-y"
                     {...field}
-                  />{" "}
-                </FormControl>{" "}
+                  />
+                </FormControl>
                 <FormDescription>
                   Define the JSON structure the AI must return.
-                </FormDescription>{" "}
-                <FormMessage />{" "}
+                </FormDescription>
+                <FormMessage />
               </FormItem>
             )}
           />

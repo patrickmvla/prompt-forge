@@ -1,2 +1,2 @@
-export { PromptBlueprintSchema, PromptRuleSchema } from './schema';
-export type { PromptBlueprint, PromptRule } from './schema';
+export { PromptBlueprintSchema, PromptRuleSchema, PromptTestSchema, AssertionSchema } from './schema';
+export type { PromptBlueprint, PromptRule, PromptTest, Assertion } from './schema';

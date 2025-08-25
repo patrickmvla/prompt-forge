@@ -1,6 +1,6 @@
-import { Groq } from 'groq-sdk';
-import type { PromptBlueprint, PromptRule } from '@promptforge/shared';
-import { z, type ZodTypeAny } from 'zod';
+import { Groq } from "groq-sdk";
+import type { PromptBlueprint, PromptRule } from "@promptforge/shared";
+import { z, type ZodTypeAny } from "zod";
 
 class PromptExecutor {
   private groq: Groq;
@@ -12,10 +12,13 @@ class PromptExecutor {
     });
   }
 
-  private buildSystemPrompt(blueprint: PromptBlueprint, violations: string[] = []): string {
+  private buildSystemPrompt(
+    blueprint: PromptBlueprint,
+    violations: string[] = []
+  ): string {
     const rulesText = blueprint.rules
-      .map(rule => `- ${rule.value}`)
-      .join('\n');
+      .map((rule) => `- ${rule.value}`)
+      .join("\n");
 
     let prompt = `
       ROLE: You are a ${blueprint.role}.
@@ -27,7 +30,9 @@ class PromptExecutor {
     `.trim();
 
     if (violations.length > 0) {
-      prompt += `\n\n=== PREVIOUS VIOLATIONS ===\n- ${violations.join('\n- ')}\nFIX THESE ERRORS IMMEDIATELY.`;
+      prompt += `\n\n=== PREVIOUS VIOLATIONS ===\n- ${violations.join(
+        "\n- "
+      )}\nFIX THESE ERRORS IMMEDIATELY.`;
     }
 
     return prompt;
@@ -36,13 +41,15 @@ class PromptExecutor {
   private checkRules(output: any, rules: PromptRule[]): string[] {
     const violations: string[] = [];
     for (const rule of rules) {
-      if (rule.type === 'HARD') {
+      if (rule.type === "HARD") {
         const ruleRegex = /NEVER mention (\w+)/;
         const match = rule.value.match(ruleRegex);
         if (match) {
           const forbiddenWord = match[1];
           if (JSON.stringify(output).includes(forbiddenWord)) {
-            violations.push(`Violation: Mentioned forbidden word "${forbiddenWord}".`);
+            violations.push(
+              `Violation: Mentioned forbidden word "${forbiddenWord}".`
+            );
           }
         }
       }
@@ -50,18 +57,20 @@ class PromptExecutor {
     return violations;
   }
 
-  private buildZodSchemaFromBlueprint(schema: Record<string, any>): z.ZodObject<any> {
+  private buildZodSchemaFromBlueprint(
+    schema: Record<string, any>
+  ): z.ZodObject<any> {
     const shape: { [key: string]: ZodTypeAny } = {};
     for (const key in schema) {
       const type = schema[key];
       switch (type) {
-        case 'string':
+        case "string":
           shape[key] = z.string();
           break;
-        case 'number':
+        case "number":
           shape[key] = z.number();
           break;
-        case 'boolean':
+        case "boolean":
           shape[key] = z.boolean();
           break;
         default:
@@ -71,18 +80,27 @@ class PromptExecutor {
     return z.object(shape);
   }
 
-  private substituteInputs(template: string, inputs: Record<string, any>): string {
+  private substituteInputs(
+    template: string,
+    inputs: Record<string, any>
+  ): string {
     return template.replace(/\{(\w+)\}/g, (placeholder, key) => {
       return inputs[key] !== undefined ? String(inputs[key]) : placeholder;
     });
   }
 
-  public async execute(blueprint: PromptBlueprint, inputs: Record<string, any>) {
+  public async execute(
+    blueprint: PromptBlueprint,
+    inputs: Record<string, any>
+  ) {
     let attempt = 0;
     let violations: string[] = [];
     let duration = 0;
 
-    const finalTaskTemplate = this.substituteInputs(blueprint.taskTemplate, inputs);
+    const finalTaskTemplate = this.substituteInputs(
+      blueprint.taskTemplate,
+      inputs
+    );
 
     while (attempt < this.maxRetries) {
       const systemPrompt = this.buildSystemPrompt(blueprint, violations);
@@ -91,35 +109,39 @@ class PromptExecutor {
       const startTime = performance.now();
       const chatCompletion = await this.groq.chat.completions.create({
         messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
         ],
-        model: 'llama3-70b-8192',
+        model: "llama3-70b-8192",
         temperature: 0,
-        response_format: { type: 'json_object' },
+        response_format: { type: "json_object" },
       });
       const endTime = performance.now();
       duration = endTime - startTime;
 
       const rawOutput = chatCompletion.choices[0]?.message?.content;
       if (!rawOutput) {
-        throw new Error('No response from LLM');
+        throw new Error("No response from LLM");
       }
 
       let parsedOutput: any;
       try {
         parsedOutput = JSON.parse(rawOutput);
       } catch (error) {
-        violations = ['Response was not valid JSON.'];
+        violations = ["Response was not valid JSON."];
         attempt++;
         continue;
       }
 
-      const outputZodSchema = this.buildZodSchemaFromBlueprint(blueprint.outputSchema);
+      const outputZodSchema = this.buildZodSchemaFromBlueprint(
+        blueprint.outputSchema
+      );
       const validationResult = outputZodSchema.safeParse(parsedOutput);
 
       if (!validationResult.success) {
-        violations = validationResult.error.issues.map(e => `Schema Violation: ${e.path.join('.')} - ${e.message}`);
+        violations = validationResult.error.issues.map(
+          (e) => `Schema Violation: ${e.path.join(".")} - ${e.message}`
+        );
         attempt++;
         continue;
       }
@@ -132,7 +154,11 @@ class PromptExecutor {
       attempt++;
     }
 
-    throw new Error(`Failed to produce a valid response after ${this.maxRetries} attempts. Last violations: ${violations.join(', ')}`);
+    throw new Error(
+      `Failed to produce a valid response after ${
+        this.maxRetries
+      } attempts. Last violations: ${violations.join(", ")}`
+    );
   }
 }
 

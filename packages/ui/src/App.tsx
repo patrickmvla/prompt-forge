@@ -4,6 +4,8 @@ import { ThemeProvider } from './providers/theme-provider';
 import { BlueprintForm } from './components/blueprint-form';
 import { BlueprintList } from './components/blueprint-list';
 import { Badge } from './components/ui/badge';
+import { TestManager } from './components/test-manager';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 const App = () => {
   const { response, error, duration } = useExecutionStore();
@@ -13,23 +15,35 @@ const App = () => {
       <div className="min-h-screen bg-background text-foreground font-sans p-4 md:p-8">
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
           
+          {/* Left Column: Editor, Tests, and Results */}
           <div className="space-y-8">
             <div className="text-center lg:text-left">
               <h1 className="text-4xl font-bold">PromptForge</h1>
               <p className="text-muted-foreground">The AI Engineering Studio</p>
             </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Blueprint Editor</CardTitle>
-                <CardDescription>
-                  Design and configure your prompt blueprint below.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <BlueprintForm />
-              </CardContent>
-            </Card>
+            <Tabs defaultValue="designer" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="designer">Designer</TabsTrigger>
+                <TabsTrigger value="tests">Test Suite</TabsTrigger>
+              </TabsList>
+              <TabsContent value="designer">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Blueprint Editor</CardTitle>
+                    <CardDescription>
+                      Design and configure your prompt blueprint below.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <BlueprintForm />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              <TabsContent value="tests">
+                <TestManager />
+              </TabsContent>
+            </Tabs>
 
             {error && (
               <Card className="border-destructive">
@@ -61,6 +75,7 @@ const App = () => {
             )}
           </div>
 
+          {/* Right Column: Blueprint List */}
           <div className="space-y-8 lg:pt-24">
             <BlueprintList />
           </div>

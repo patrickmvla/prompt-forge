@@ -5,8 +5,7 @@
     "packages/*"
   ],
   "scripts": {
-    "api": "bun --cwd packages/api dev",
-    "ui": "bun --cwd packages/ui dev",
-    "dev": "bun run --parallel \"/api/\" \"/ui/\""
+    "dev": "bun --filter '*' dev",
+    "build": "bun run -r build"
   }
 }
