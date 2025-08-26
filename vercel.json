@@ -1,14 +1,14 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
-    "packages/api/src/index.ts": {
-      "runtime": "edge" 
+    "packages/api/dist/index.js": {
+      "runtime": "nodejs20.x"
     }
   },
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "/packages/api/src/index.ts"
+      "destination": "/packages/api/dist/index.js"
     }
   ]
 }
