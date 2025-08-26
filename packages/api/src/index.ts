@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { handle } from "hono/vercel";
 import { zValidator } from "@hono/zod-validator";
 import {
   PromptBlueprintSchema,
@@ -240,5 +241,5 @@ const routes = app
     }
   });
 
-export default app;
+export default handle(app);
 export type ApiRoutes = typeof routes;
