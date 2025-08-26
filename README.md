@@ -160,4 +160,4 @@ Once you are satisfied with your blueprint's design and test results, click the 
 
 An "Provide Inputs" modal will appear, prompting you to fill in the values for the input slots.
 
-After providing the inputs and clicking "Execute" in the modal, the blueprint will be run,
+After providing the inputs and clicking "Execute" in the modal, the blueprint will be run, and the final AI-generated output will be displayed in the "API Response" card.

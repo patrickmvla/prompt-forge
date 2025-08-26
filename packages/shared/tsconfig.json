@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    // Override the root settings for this library package
+    "noEmit": false, // Allow this package to emit files
+    "declaration": true, // Enable .d.ts file generation
+    "emitDeclarationOnly": true, // Only emit .d.ts files, not .js
+    "outDir": "dist"
+  },
+  "include": ["src"] // Only include files from the 'src' directory
+}

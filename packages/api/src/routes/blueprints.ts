@@ -1,13 +1,12 @@
-import { Hono } from 'hono';
-import { zValidator } from '@hono/zod-validator';
-import { PromptBlueprintSchema } from '@promptforge/shared';
-import { db } from '../db';
-import { blueprints, rules } from '../db/schema';
+import { Hono } from "hono";
+import { zValidator } from "@hono/zod-validator";
+import { PromptBlueprintSchema } from "@promptforge/shared";
+import { db } from "../db";
+import { blueprints, rules } from "../db/schema";
 
 const app = new Hono();
 
-// GET /blueprints -> List all blueprints
-app.get('/', async (c) => {
+app.get("/", async (c) => {
   const allBlueprints = await db.query.blueprints.findMany({
     with: {
       rules: true,
@@ -16,12 +15,11 @@ app.get('/', async (c) => {
   return c.json(allBlueprints);
 });
 
-// POST /blueprints -> Create a new blueprint
 const route = app.post(
-  '/',
-  zValidator('json', PromptBlueprintSchema.omit({ id: true })),
+  "/",
+  zValidator("json", PromptBlueprintSchema.omit({ id: true })),
   async (c) => {
-    const blueprintData = c.req.valid('json');
+    const blueprintData = c.req.valid("json");
 
     const newBlueprint = await db.transaction(async (tx) => {
       const [insertedBlueprint] = await tx

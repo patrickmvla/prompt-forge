@@ -74,8 +74,6 @@ const emptyDefaultValues: BlueprintFormValues = {
   outputSchema: JSON.stringify({}, null, 2),
 };
 
-// --- Sub-components for Field Arrays to resolve rendering bug ---
-
 const InputSlotFields = ({
   control,
 }: {
@@ -217,8 +215,6 @@ const RuleFields = ({ control }: { control: Control<BlueprintFormValues> }) => {
     </div>
   );
 };
-
-// --- Main Form Component ---
 
 export const BlueprintForm = () => {
   const execute = useExecutionStore((state) => state.execute);

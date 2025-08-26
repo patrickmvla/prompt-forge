@@ -31,7 +31,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useFieldArray, useForm } from "react-hook-form";
+import { useFieldArray, useForm, type Control } from "react-hook-form";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import { Badge } from "./ui/badge";
@@ -70,7 +70,7 @@ const AssertionEditor = ({
   control,
   testIndex,
 }: {
-  control: any;
+  control: Control<TestManagerFormValues>;
   testIndex: number;
 }) => {
   const { fields, append, remove } = useFieldArray({
@@ -94,6 +94,7 @@ const AssertionEditor = ({
                 <FormControl>
                   <Input placeholder="Field (e.g., data.name)" {...field} />
                 </FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -119,6 +120,7 @@ const AssertionEditor = ({
                     <SelectItem value="lessThan">Less than</SelectItem>
                   </SelectContent>
                 </Select>
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -130,6 +132,7 @@ const AssertionEditor = ({
                 <FormControl>
                   <Input placeholder="Expected Value" {...field} />
                 </FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -163,19 +166,82 @@ const AssertionEditor = ({
   );
 };
 
+// START: New dedicated component for the JSON input
+// This is currently not working i need a better solution to get this fixed
+const JsonInput = ({ field }: { field: any }) => {
+  const [rawJson, setRawJson] = useState(() =>
+    JSON.stringify(field.value, null, 2)
+  );
+  const [jsonError, setJsonError] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      if (
+        JSON.stringify(JSON.parse(rawJson), null, 2) !==
+        JSON.stringify(field.value, null, 2)
+      ) {
+        setRawJson(JSON.stringify(field.value, null, 2));
+      }
+    } catch {
+      if (rawJson !== JSON.stringify(field.value, null, 2)) {
+        setRawJson(JSON.stringify(field.value, null, 2));
+      }
+    }
+  }, [field.value, rawJson]);
+
+  const handleJsonChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newText = e.target.value;
+    setRawJson(newText);
+
+    try {
+      const parsedJson = JSON.parse(newText);
+      field.onChange(parsedJson);
+      setJsonError(null);
+    } catch {
+      setJsonError("Invalid JSON format.");
+    }
+  };
+
+  return (
+    <FormItem>
+      <FormLabel>Inputs</FormLabel>
+      <FormControl>
+        <Textarea
+          className="font-mono"
+          placeholder={JSON.stringify(
+            { user_input: "Some sample text." },
+            null,
+            2
+          )}
+          value={rawJson}
+          onChange={handleJsonChange}
+        />
+      </FormControl>
+      {jsonError ? (
+        <p className="text-sm font-medium text-destructive">{jsonError}</p>
+      ) : (
+        <FormMessage />
+      )}
+    </FormItem>
+  );
+};
+
 export const TestManager = () => {
   const { activeBlueprint } = useBlueprintStore();
   const queryClient = useQueryClient();
   const [testResults, setTestResults] = useState<Record<string, TestResult>>(
     {}
   );
+  const [existingTestIds, setExistingTestIds] = useState(new Set<string>());
 
   const form = useForm<TestManagerFormValues>({
     resolver: zodResolver(testManagerSchema),
   });
 
   useEffect(() => {
-    form.reset({ tests: activeBlueprint?.tests || [] });
+    const tests = activeBlueprint?.tests || [];
+    form.reset({ tests });
+    setExistingTestIds(new Set(tests.map((t) => t.id)));
   }, [activeBlueprint, form]);
 
   const { fields } = useFieldArray({
@@ -279,7 +345,13 @@ export const TestManager = () => {
 
   const handleSaveTest = (index: number) => {
     const testToSave = form.getValues().tests[index];
-    updateTestMutation.mutate(testToSave);
+    if (existingTestIds.has(testToSave.id)) {
+      updateTestMutation.mutate(testToSave);
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { id: _id, ...newTestData } = testToSave;
+      createTestMutation.mutate(newTestData);
+    }
   };
 
   return (
@@ -303,15 +375,13 @@ export const TestManager = () => {
                       name={`tests.${index}.name`}
                       render={({ field }) => (
                         <FormItem className="flex-grow">
-                          {" "}
                           <FormControl>
-                            {" "}
                             <Input
                               {...field}
                               className="text-lg font-semibold border-none p-0"
-                            />{" "}
-                          </FormControl>{" "}
-                          <FormMessage />{" "}
+                            />
+                          </FormControl>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -332,7 +402,10 @@ export const TestManager = () => {
                         variant="outline"
                         size="sm"
                         onClick={() => handleSaveTest(index)}
-                        disabled={updateTestMutation.isPending}
+                        disabled={
+                          updateTestMutation.isPending ||
+                          createTestMutation.isPending
+                        }
                       >
                         <Save className="h-4 w-4 mr-2" />
                         Save
@@ -350,32 +423,7 @@ export const TestManager = () => {
                   <FormField
                     control={form.control}
                     name={`tests.${index}.inputs`}
-                    render={({ field }) => (
-                      <FormItem>
-                        {" "}
-                        <FormLabel>Inputs</FormLabel>{" "}
-                        <FormControl>
-                          {" "}
-                          <Textarea
-                            className="font-mono"
-                            placeholder={JSON.stringify(
-                              { user_input: "Some sample text." },
-                              null,
-                              2
-                            )}
-                            value={JSON.stringify(field.value, null, 2)}
-                            onChange={(e) => {
-                              try {
-                                field.onChange(JSON.parse(e.target.value));
-                              } catch {
-                                /* Silently ignore JSON parsing errors while user is typing */
-                              }
-                            }}
-                          />{" "}
-                        </FormControl>{" "}
-                        <FormMessage />{" "}
-                      </FormItem>
-                    )}
+                    render={({ field }) => <JsonInput field={field} />}
                   />
 
                   <AssertionEditor control={form.control} testIndex={index} />

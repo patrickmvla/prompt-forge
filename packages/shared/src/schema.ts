@@ -1,14 +1,20 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 export const PromptRuleSchema = z.object({
   id: z.string().uuid(),
-  type: z.enum(['HARD', 'SOFT']),
+  type: z.enum(["HARD", "SOFT"]),
   value: z.string(),
 });
 
 export const AssertionSchema = z.object({
   id: z.string().uuid(),
-  type: z.enum(['equalTo', 'notEqualTo', 'contains', 'greaterThan', 'lessThan']),
+  type: z.enum([
+    "equalTo",
+    "notEqualTo",
+    "contains",
+    "greaterThan",
+    "lessThan",
+  ]),
   field: z.string(),
   expectedValue: z.any(),
 });
@@ -25,10 +31,13 @@ export const PromptBlueprintSchema = z.object({
   name: z.string(),
   role: z.string(),
   rules: z.array(PromptRuleSchema),
-  inputSlots: z.record(z.string(), z.object({
-    name: z.string(),
-    type: z.enum(['string', 'number', 'date']),
-  })),
+  inputSlots: z.record(
+    z.string(),
+    z.object({
+      name: z.string(),
+      type: z.enum(["string", "number", "date"]),
+    })
+  ),
   outputSchema: z.record(z.string(), z.any()),
   taskTemplate: z.string(),
   tests: z.array(PromptTestSchema).optional(),

@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "bun --hot src/index.ts",
+    "build": "bun build ./src/index.ts --outdir ./dist --target=bun",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "bun src/db/migrate.ts"
   },
@@ -19,6 +20,7 @@
     "postgres": "^3.4.7"
   },
   "devDependencies": {
+    "@types/lodash-es": "^4.17.12",
     "drizzle-kit": "^0.31.4",
     "tsx": "^4.20.5"
   }

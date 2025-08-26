@@ -1,5 +1,5 @@
-import { create } from 'zustand'
-import type { PromptBlueprint } from '@promptforge/shared'
+import { create } from "zustand";
+import type { PromptBlueprint } from "@promptforge/shared";
 
 interface BlueprintState {
   activeBlueprint: PromptBlueprint | null;

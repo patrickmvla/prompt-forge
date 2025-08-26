@@ -6,6 +6,6 @@
   ],
   "scripts": {
     "dev": "bun --filter '*' dev",
-    "build": "bun run -r build"
+    "build": "bun --filter '*' build"
   }
 }

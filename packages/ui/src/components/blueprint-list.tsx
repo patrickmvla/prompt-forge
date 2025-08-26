@@ -35,7 +35,7 @@ export const BlueprintList = () => {
   } = useQuery({
     queryKey: ["blueprints"],
     queryFn: fetchBlueprints,
-    enabled: false, // Prevents the query from running automatically on mount
+    enabled: false,
   });
 
   const { activeBlueprint, setActiveBlueprint } = useBlueprintStore();
@@ -125,7 +125,6 @@ export const BlueprintList = () => {
       );
     }
 
-    // Initial state before the user has tried to fetch
     return (
       <div className="text-center p-6 border border-dashed rounded-lg">
         <p className="text-muted-foreground mb-4">

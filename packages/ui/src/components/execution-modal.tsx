@@ -22,8 +22,6 @@ import { Input } from "@/components/ui/input";
 import type { PromptBlueprint } from "@promptforge/shared";
 import type { z as zod } from "zod";
 
-// --- Component Props Interfaces ---
-
 interface ExecutionModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -37,9 +35,6 @@ interface ExecutionFormProps {
   onSubmit: (inputs: Record<string, any>) => void;
 }
 
-// --- Helper Function ---
-
-// Dynamically creates a Zod schema from the blueprint's input slots.
 const getExecutionSchema = (bp: PromptBlueprint) => {
   const shape = Object.keys(bp.inputSlots).reduce((acc, key) => {
     const slot = bp.inputSlots[key];
@@ -58,9 +53,6 @@ const getExecutionSchema = (bp: PromptBlueprint) => {
   return z.object(shape);
 };
 
-// --- Main Components ---
-
-// Inner form component that is re-mounted when the blueprint changes.
 const ExecutionForm = ({
   blueprint,
   onClose,
@@ -117,7 +109,6 @@ const ExecutionForm = ({
   );
 };
 
-// Modal component that controls visibility and provides the key.
 export const ExecutionModal = ({
   isOpen,
   onClose,
@@ -136,7 +127,7 @@ export const ExecutionModal = ({
           </DialogDescription>
         </DialogHeader>
         <ExecutionForm
-          key={blueprint.id} // This key is crucial for re-mounting the form
+          key={blueprint.id}
           blueprint={blueprint}
           onClose={onClose}
           onSubmit={onSubmit}

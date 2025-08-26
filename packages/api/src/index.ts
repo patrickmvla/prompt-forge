@@ -20,7 +20,7 @@ const executionPayloadSchema = z.object({
 });
 
 const routes = app
-  // --- Blueprint CRUD ---
+
   .get("/blueprints", async (c) => {
     const allBlueprints = await db.query.blueprints.findMany({
       with: { rules: true, tests: true },
@@ -64,10 +64,8 @@ const routes = app
         });
         return c.json(newBlueprintWithRelations, 201);
       } catch (error) {
-        // THIS WILL CATCH THE DATABASE ERROR
         console.error("!!! FAILED TO CREATE BLUEPRINT TRANSACTION:", error);
 
-        // Return a detailed error response for debugging
         return c.json(
           {
             message: "Failed to create blueprint due to a server error.",
@@ -107,7 +105,6 @@ const routes = app
 
         await tx.delete(rules).where(eq(rules.blueprintId, id));
         if (blueprintData.rules && blueprintData.rules.length > 0) {
-          // Omit the client-generated 'id' from each rule before inserting
           const rulesToInsert = blueprintData.rules.map(({ id, ...rest }) => ({
             ...rest,
             blueprintId: updatedBp.id,
@@ -135,7 +132,7 @@ const routes = app
     if (!deleted) return c.json({ error: "Blueprint not found" }, 404);
     return c.json({ message: "Blueprint deleted" });
   })
-  // --- Test CRUD ---
+
   .post(
     "/blueprints/:blueprintId/tests",
     zValidator("json", PromptTestSchema.omit({ id: true })),
@@ -173,7 +170,7 @@ const routes = app
     if (!deletedTest) return c.json({ error: "Test not found" }, 404);
     return c.json({ message: "Test deleted" });
   })
-  // --- Test Runner ---
+
   .post("/tests/:testId/run", async (c) => {
     const { testId } = c.req.param();
     const test = await db.query.tests.findFirst({
@@ -222,7 +219,7 @@ const routes = app
       );
     }
   })
-  // --- Execution ---
+
   .post("/execute", zValidator("json", executionPayloadSchema), async (c) => {
     const { blueprint, inputs } = c.req.valid("json");
     try {
