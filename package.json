@@ -6,6 +6,6 @@
   ],
   "scripts": {
     "dev": "bun --filter '*' dev",
-    "build": "bun --filter '*' build"
+    "build": "bun --filter @promptforge/shared build && bun --filter \"!@promptforge/shared\" build"
   }
 }
