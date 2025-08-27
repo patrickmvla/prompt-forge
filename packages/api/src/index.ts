@@ -1,23 +1,26 @@
-import { Hono } from "hono";
-import { handle } from "hono/vercel";
 import { zValidator } from "@hono/zod-validator";
 import {
+  AssertionSchema,
   PromptBlueprintSchema,
   PromptTestSchema,
-  AssertionSchema,
 } from "@promptforge/shared";
+import { eq } from "drizzle-orm";
+import { Hono } from "hono";
+import { z } from "zod";
+import { assertionEngine } from "./core/assertion-engine";
+import { promptExecutor } from "./core/prompt-executor";
 import { db } from "./db";
 import { blueprints, rules, tests } from "./db/schema";
-import { promptExecutor } from "./core/prompt-executor";
-import { z } from "zod";
-import { eq } from "drizzle-orm";
-import { assertionEngine } from "./core/assertion-engine";
 
 const app = new Hono();
 
 const executionPayloadSchema = z.object({
   blueprint: PromptBlueprintSchema,
   inputs: z.record(z.string(), z.any()),
+});
+
+app.get("/health", (c) => {
+  return c.text("API is alive!");
 });
 
 const routes = app
@@ -241,5 +244,5 @@ const routes = app
     }
   });
 
-export default handle(app);
+export default app;
 export type ApiRoutes = typeof routes;
