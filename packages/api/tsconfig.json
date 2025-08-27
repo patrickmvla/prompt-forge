@@ -1,0 +1,17 @@
+// In packages/api/tsconfig.json
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    // --- Overrides for the API build ---
+    "noEmit": false,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "module": "ESNext",
+    "lib": ["ESNext"],
+
+    // This is the new line to fix the error
+    "allowImportingTsExtensions": false
+  },
+  "include": ["src"],
+  "exclude": ["node_modules"]
+}
